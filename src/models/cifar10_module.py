@@ -7,6 +7,9 @@ from torchmetrics.classification.accuracy import Accuracy
 
 import timm
 
+from torchvision import transforms as T
+import torch.nn.functional as F
+from PIL.Image import Image
 class Resnet18_Custom(LightningModule):
     """Example of LightningModule for MNIST classification.
 
@@ -51,8 +54,27 @@ class Resnet18_Custom(LightningModule):
         # for tracking best so far validation accuracy
         self.val_acc_best = MaxMetric()
 
+        self.mean = (0.4914, 0.4822, 0.4465)
+        self.std = (0.2471, 0.2435, 0.2616)
+        self.predict_transform_1 = T.Normalize(self.mean, self.std)
+        self.predict_transform_2 = T.ToTensor()
+
     def forward(self, x: torch.Tensor):
         return self.net(x)
+    
+    @torch.jit.export
+    def forward_jit(self, x):
+
+        with torch.no_grad():
+            # transform the inputs
+            x = self.predict_transform_1(x)
+            # x = self.predict_transform_2(x)
+            # forward pass
+            logits = self.net(x)
+
+            preds = F.softmax(logits, dim=-1)
+
+        return preds
 
     def on_train_start(self):
         # by default lightning executes validation step sanity checks before training starts,

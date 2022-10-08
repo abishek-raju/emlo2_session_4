@@ -15,14 +15,27 @@ RUN pip install \
   && rm -rf /root/.cache/pip
 
 
-
-ADD . /srv/app
-
-RUN pip install --no-cache-dir -r /srv/app/requirements.txt
+RUN mkdir -p -v /home/app
 
 
 
-# ENTRYPOINT [ "python","/srv/app/src/train.py" ]
-WORKDIR /srv/app/
+ADD requirements.txt /home/app
 
-ENTRYPOINT []
+
+
+RUN pip install --no-cache-dir -r /home/app/requirements.txt
+
+ADD /src/demo_file.py /home/app
+ADD /logs/eval/runs/2022-10-07_15-43-58/model.script.pt /home/app
+
+RUN mkdir -p -v /home/app/src/utils
+ADD /src/utils /home/app/src/utils
+
+EXPOSE 5000
+
+WORKDIR /home/app/
+
+ENTRYPOINT [ "python","demo_file.py","+ckpt_path=model.script.pt"]
+
+
+# ENTRYPOINT []
